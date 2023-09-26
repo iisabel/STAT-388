@@ -1,0 +1,131 @@
+---
+title: "STAT 338 Homework 6"
+author: "Isabel Heard"
+date: "11/23/2021"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## 1
+Explain the similarities and differences between boosting and bagging with regression trees.
+
+Bagging:
+Used to reduce the variance of a decision tree. You create subsets of data from the training data set, and then in each set is used to train the decision trees. The result gives us a bunch of different models, then it averages out the predictions from the different trees. 
+
+Boosting:
+This is a way to create a collection of all the predictors. Each tree is grown sequentially using information from the previous trees to build the next. This approach allows the model to learn slowly.
+
+Similarities:
+These methods both work for improving the prediction accuracy of trees. They work by growing many trees on the training data set and then combining the predictions to get the final model of trees.
+
+
+
+## 2
+Download this data: https://bit.ly/PredAnalytics HW6 containing 7 variables and 1000 observations. Using the variable labeled “Y” as the response, fit a model with x1-x6 as predictors using the R function “gbm”. Use k-fold cross validation with a reasonable choice of k to find the optimal value of the shrinkage parameter, λ. Plot λ versus mean squared error over a reasonable range of λ’s. How many trees did you need to minimize the MSE in cross validation?
+
+# Read in Data
+```{r}
+library(gbm)
+library(caret)
+library(plyr)
+library(dplyr)   
+library(h2o)      
+library(xgboost)
+
+
+
+getwd()
+setwd("/Users/isabelheard/Downloads/STAT 338/HW 6")
+data <- read.csv("HW6.csv")
+#head(data)
+#summary(data)
+
+d <- na.omit(data)
+
+dt = sort(sample(nrow(d), nrow(d)*.7))
+train<-d[dt,]
+#head(train)
+test<-d[-dt,]
+#head(test)
+
+set.seed(1)
+model1 = gbm(Y ~., data = train, n.trees=5000, interaction.depth=4)
+model1
+summary(model1)
+```
+
+
+
+# Model
+```{r}
+#CV
+set.seed(123)
+train.control <- trainControl(method = "repeatedcv", 
+                              number = 10, repeats = 3)
+
+model <- train(Y ~., data = train, method = "lm",
+               trControl = train.control)
+
+print(model)
+
+par(mfrow=c(1,2)) 
+plot(model1)
+
+
+#Training MSE
+set.seed(1)
+pows <- seq(-8, -0.2, by = 0.1)
+lambdas <- 10^pows
+train.err <- rep(NA, length(lambdas))
+for (i in 1:length(lambdas)) {
+    model <- gbm(Y ~ ., data = train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[i])
+    pred.train <- predict(model, train, n.trees = 1000)
+    train.err[i] <- mean((pred.train - train$Y)^2)
+}
+plot(lambdas, train.err, type = "b", xlab = "Lambda", ylab = "Training MSE")
+
+mse <- min(train.err)
+mse 
+
+
+#Test MSE
+set.seed(1)
+test.err2 <- rep(NA, length(lambdas))
+for (i in 1:length(lambdas)) {
+    model2 <- gbm(Y ~ ., data = test, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[i])
+    yhat <- predict(model2, test, n.trees = 1000)
+    test.err2[i] <- mean((yhat - test$Y)^2)
+}
+plot(lambdas, test.err2, type = "b", xlab = "Lambda", ylab = "Test MSE")
+
+#Minimum test mse
+mse <- min(test.err2)
+mse
+#lambda
+lambda <- lambdas[which.min(test.err2)]
+lambda
+
+
+#Model
+boost.Y <- gbm(Y ~ ., data = train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[which.min(test.err2)])
+summary(boost.Y)
+```
+
+
+
+
+
