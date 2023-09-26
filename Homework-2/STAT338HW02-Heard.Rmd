@@ -1,0 +1,468 @@
+---
+title: "STAT 338 Homework 2"
+author: "Isabel Heard"
+date: "9/24/2021"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 1
+In linear discriminant analysis with 2 classes, p = 1 and π1 = π2 = 0.5, show that the decision boundary is (μ1+μ2)/2. 
+(This question appears on slide 2 24 of the LDA notes.)
+
+x = (μ1^2-μ2^2)/2(μ1-μ2) = (μ1+μ2)/2
+
+
+
+
+
+# 2
+Suppose we have a data set with five predictors:
+X1 = GPA
+X2 = IQ
+X3 = Gender (1 for Female and 0 for Male)
+X4 = Interaction between GPA and IQ
+X5 = Interaction between GPA and Gender. 
+The response is starting salary after graduation (in thousands of dollars). Suppose we use least squares to fit the model, and get: 
+βˆ0 = 50
+βˆ1 = 20 
+βˆ 2 = 0.07 
+βˆ 3 = 35 
+βˆ 4 = 0.01 
+βˆ 5 = −10 
+
+
+
+# a
+Which answer is correct, and why?
+i. For a fixed value of IQ and GPA, males earn more on average than females.
+ii. For a fixed value of IQ and GPA, females earn more on average than males.
+iii. For a fixed value of IQ and GPA, males earn more on average than females provided that the GPA is high enough.
+iv. For a fixed value of IQ and GPA, females earn more on average than males provided that the GPA is high enough.
+
+
+iii is the correct answer because women are earning an average of 35-10*mean(GPA) more than men are. A higher GPA means that women earn less than men, so iii is true.
+
+
+
+## b
+Predict the salary of a female with IQ of 110 and a GPA of 4.0.
+
+$\hat{Y}$” = 50 + 20(4.0) + 0.07(110) + 35(1) + 0.01(4.0)(110) - 10(4.0)(1) = 137.1
+
+The predicted salary for a female with an IQ of 110 and a GPA of 4.0 is $137,100.
+
+
+
+
+## c
+True or false: Since the coefficient for the GPA/IQ interaction term is very small, there is very little evidence of an interaction effect. Justify your answer.
+
+False, you can have a very small interaction term and coefficient becuase the interection effects depends on the standard error other the beta estimates, so testing the hypothesis
+
+
+
+
+
+
+
+
+# 4 
+This question should be answered using the Carseats data set.
+
+```{r} 
+library(ISLR)
+attach(Carseats)
+head(Carseats)
+```
+
+
+## a
+Fit a multiple regression model to predict Sales using Price, Urban, and US.
+
+```{r} 
+lm.fit = lm(Sales ~ Price + Urban + US, data = Carseats)
+summary(lm.fit)
+```
+
+
+
+
+## b
+Provide an interpretation of each coefficient in the model. Be careful some of the variables in the model are qualitative!
+
+Price - There is a negative relationship between price and sales. As price increases, sales decreases.
+Urban (qualitative) - Not enough evidence of a relationship with sales with the high p-value
+US (qualitative) - If location is on the US the sales will increase by 1201 units.
+
+
+
+
+## c
+Write out the model in equation form, being careful to handle the qualitative variables properly.
+
+Sales = 13.043469 + (-0.054459)Price + (-0.021916)Urban + (1.200573)US + E
+
+
+
+
+## d 
+For which of the predictors can you reject the null hypothesis H0 :βj =0?
+
+Reject the null hypothesis for Urban because it is not significant with a value of 0.936.
+
+
+
+
+## e
+On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
+
+```{r} 
+lm.fit2 = lm(Sales ~ Price + US, data = Carseats)
+summary(lm.fit2)
+```
+
+
+
+
+## f
+How well do the models in (a) and (e) fit the data?
+
+```{r} 
+anova(lm.fit, lm.fit2)
+```
+
+
+Looking at the RSE and R^2, they both fit the data similarly, but (e) fits the data just a little better.
+
+
+
+
+
+## g
+Using the model from (e), obtain 95% confidence intervals for the coefficient(s).
+
+```{r} 
+confint(lm.fit2)
+```
+
+
+
+
+## h
+Is there evidence of outliers or high leverage observations in the model from (e)?
+
+```{r} 
+par(mfrow=c(2,2))
+plot(lm.fit2)
+```
+
+
+
+In the residuals vs leverage graph there seems to be an outlier. 
+
+
+
+
+
+
+# 5 
+This question should be answered using the Weekly data set, which is part of the ISLR package. This data is similar in nature to the Smarket data from this chapter’s lab, except that it contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+
+```{r} 
+library(ISLR)
+attach(Weekly)
+head(Weekly)
+```
+
+
+## a
+Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any patterns?
+
+```{r} 
+library(corrplot)
+
+summary(Weekly)
+
+corrplot(cor(Weekly[,-9]), method="circle")
+
+plot(Weekly)
+```
+
+
+It seems like there is a linear relationship between volume and year, which is easily seen in the correlation plot.
+
+
+
+
+## b
+Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so, which ones?
+
+```{r} 
+fit<-glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data=Weekly,family=binomial)
+summary(fit)
+```
+
+The predictors that appear to be significant is Lag2.
+
+
+
+
+## c 
+Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+
+```{r} 
+logWeekly.prob= predict(fit, type='response')
+logWeekly.pred =rep("Down", length(logWeekly.prob))
+logWeekly.pred[logWeekly.prob > 0.5] = "Up"
+table(logWeekly.pred, Direction)
+```
+
+The diagonal going from left to right are the false positives, and the diagonal going from right to left are the false negatives. Here, the model predicted 56.11% correctly.
+(54+557)/(54+48+430+557)
+
+
+
+## d
+Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+
+```{r} 
+training.data = Weekly[Weekly$Year<2009,]
+test.data = Weekly[Weekly$Year>2008,]
+glm = glm(Direction~Lag2, data= training.data, family = "binomial")
+summary(glm)
+
+#R does not like this part to knit, but it runs fine
+
+#testprobs = predict(glm, type="response", newdata = test.data)
+#testdirs = Weekly$Direction[Weekly$Year>2008]
+
+
+#table(testpreds, testdirs)
+```
+
+
+The model correctly predicted 62.5% of the time.
+
+
+
+
+## e
+Repeat (d) using LDA.
+
+```{r} 
+library(MASS)
+
+lda.fit = lda(Direction~Lag2, data= training.data)
+lda.fit
+
+lda.pred = predict(lda.fit, newdata=test.data, type="response")
+lda.class = lda.pred$class
+table(lda.class, test.data$Direction)
+```
+
+Same as part d) with 62.5% being predicted correctly.
+
+
+
+
+## f
+Repeat (d) using QDA.
+
+```{r} 
+qda.fit = qda(Direction~Lag2, data= training.data)
+qda.fit
+
+qda.pred = predict(qda.fit, newdata=test.data, type="response")
+qda.class = qda.pred$class
+table(qda.class, test.data$Direction)
+```
+
+QDA created model with accuracy of 58.7%.
+
+
+
+
+## g
+Repeat (d) using KNN with K = 1.
+
+```{r} 
+library(class)
+set.seed(1)
+
+train.X = cbind(training.data$Lag2)
+test.X = cbind(test.data$Lag2)
+train.Y = cbind(training.data$Direction)
+a <- knn(train.X, test.X, train.Y, k=1)
+table(a, test.data$Direction)
+```
+
+Accuracy of 50%
+
+
+
+
+## h
+Which of these methods appears to provide the best results on this data?
+
+LDA and logistic regression.
+
+
+
+
+## i
+Experiment with different combinations of predictors, including possible transformations and interactions, for each of the methods. Report the variables, method, and associated confusion matrix that appears to provide the best results on the held out data. Note that you should also experiment with values for K in the KNN classifier.
+
+```{r} 
+qda.fit2 = qda(Direction~Lag2 + Lag4, data= training.data)
+qda.fit2
+qda.pred2 = predict(qda.fit2, newdata=test.data, type="response")
+qda.class2 = qda.pred2$class
+table(qda.class2, test.data$Direction)
+
+
+lda.fit2 = lda(Direction~Lag2 + Lag4, data= training.data)
+lda.fit2
+lda.pred2 = predict(lda.fit2, newdata=test.data, type="response")
+lda.class2 = lda.pred2$class
+table(lda.class2, test.data$Direction)
+```
+
+
+Tried with predictors of Lag2 and Lag4, results turned out about the same with accuracy for QDA of 53.8% and LDA of 62.5%.
+
+
+
+
+
+
+# 6 
+We will now perform cross-validation on a simulated data set.
+
+
+## a
+Generate a simulated data set as follows:
+
+```{r} 
+set.seed(1)
+x <- rnorm(100)
+y <- x -2 * x^2 + rnorm(100)
+```
+
+In this data set, what is n and what is p? Write out the model used to generate the data in equation form.
+
+n = 100
+p = 2
+Y = X-2X^2 + E
+
+
+
+## b
+Create a scatterplot of X against Y . Comment on what you find.
+
+```{r} 
+plot(x,y)
+```
+
+
+
+## c
+Set a random seed, and then compute the LOOCV errors that result from fitting the following four models using least squares:
+i. Y = β0 + β1X + ε
+ii. Y =β0 +β1X+β2X2 +ε
+iii. Y =β0 +β1X+β2X2 +β3X3 +ε
+iv. Y =β0 +β1X+β2X2 +β3X3 +β4X4 +ε.
+Note you may find it helpful to use the data.frame() function
+to create a single data set containing both X and Y .
+
+```{r} 
+library(boot)
+set.seed(1)
+Data <- data.frame(x, y)
+
+#i
+fit.glm.1 <- glm(y ~ x)
+cv.glm(Data, fit.glm.1)$delta[1]
+
+#ii
+fit.glm.2 <- glm(y ~ poly(x, 2))
+cv.glm(Data, fit.glm.2)$delta[1]
+
+#iii
+fit.glm.3 <- glm(y ~ poly(x, 3))
+cv.glm(Data, fit.glm.3)$delta[1]
+
+#iv
+fit.glm.4 <- glm(y ~ poly(x, 4))
+cv.glm(Data, fit.glm.4)$delta[1]
+```
+
+
+
+
+## d
+Repeat (c) using another random seed, and report your results.
+Are your results the same as what you got in (c)? Why?
+
+```{r} 
+library(boot)
+set.seed(20)
+
+#i
+fit.glm.1 <- glm(y ~ x)
+cv.glm(Data, fit.glm.1)$delta[1]
+
+#ii
+fit.glm.2 <- glm(y ~ poly(x, 2))
+cv.glm(Data, fit.glm.2)$delta[1]
+
+#iii
+fit.glm.3 <- glm(y ~ poly(x, 3))
+cv.glm(Data, fit.glm.3)$delta[1]
+
+#iv
+fit.glm.4 <- glm(y ~ poly(x, 4))
+cv.glm(Data, fit.glm.4)$delta[1]
+```
+
+The results are the same as in part c) because it evaluates n folds of a single observation.
+
+
+
+
+## e
+Which of the models in (c) had the smallest LOOCV error? Is this what you expected? Explain your answer.
+
+Model ii had the smallest error. This is what I expected because the quadratic model matches the model that was used to generate the data.
+
+
+
+
+## f
+Comment on the statistical significance of the coefficient estimates that results from fitting each of the models in (c) using least squares. Do these results agree with the conclusions drawn based on the cross-validation results?
+
+```{r} 
+summary(fit.glm.4)
+
+summary(fit.glm.2)
+```
+
+
+The quadratic and linear terms are significant. 
+
+
+
+
+
+
