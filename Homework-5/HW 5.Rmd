@@ -1,0 +1,115 @@
+---
+title: "STAT 338 Homework 5"
+author: "Isabel Heard"
+date: "11/09/2021"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Q1
+Download the titanic data set
+```{r}
+getwd()
+setwd("/Users/isabelheard/Downloads/STAT 338/HW5")
+train <- read.csv("train.csv")
+test <- read.csv("test.csv")
+head(train)
+head(test)
+summary(train)
+```
+
+## Q2
+Build a classification tree to predict the variable “Survived”. Report the cross validation error using k-fold cross validation with a reasonable value of k.
+```{r}
+library(randomForest)
+library(tree)
+library(caret)
+library(rpart)
+
+
+#K-fold CV
+Kfold <- function(train,formula,family,k)
+{
+  object <- glm(formula=formula, data=train, family = family)
+}
+
+MeanSquareError_func <- function(train,formula)
+{
+  LM_Object <- lm(formula=formula, data=train)
+  LM_Object_sum <-summary(LM_Object)
+  MSE <- mean(LM_Object_sum$residuals^2)
+  print("Mean squared error")
+  print(MSE)
+}
+
+MSE_Train <-MeanSquareError_func(train,Survived ~ Pclass + Sex + SibSp + Age)
+
+MSE_Train4 <-MeanSquareError_func(train,Survived ~ PassengerId + Pclass + Sex + Age +SibSp + Parch + Embarked)
+
+MSE_Train5 <-MeanSquareError_func(train,Survived ~ Pclass + Sex + Age +SibSp + Parch + Embarked)
+
+MSE_Train6 <-MeanSquareError_func(train,Survived ~ Pclass + Sex + Age + Fare + SibSp + Parch + Embarked)
+
+
+tree1 = tree(Survived ~ Pclass + Sex + Age + Fare + SibSp + Parch + Embarked, data = train)
+
+
+fit <- rpart(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked,
+               data=train,
+               method="class")
+
+Prediction <- predict(fit, test, type = "class")
+submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
+submit
+
+
+
+library(rpart)
+library(rpart.plot)
+fit = rpart(Survived~Pclass + Sex + Age + Fare + SibSp + Parch + Embarked, data=train, method="class", control=rpart.control(minsplit=10, cp=0.008))
+rpart.plot(fit)
+
+```
+
+K-fold CV error = 0.1438884
+
+
+
+## Q3
+Use a random forest to predict the variable “Survived”. Report the out-of-bag cross validation error.
+```{r}
+library(randomForest)
+summary(train)
+train <- train[complete.cases(train),]
+
+test <- test[complete.cases(test),]
+
+
+train$Sex <- as.factor(train$Sex)
+train$Pclass <- as.factor(train$Pclass)
+train$Embarked <- as.factor(train$Embarked)
+train$Survived <- as.factor(train$Survived)
+
+
+rf <- randomForest(Survived ~  Sex + Age + Parch + Fare + Pclass + SibSp + Parch + Ticket + Embarked, data = train)
+rf
+
+importance (rf)
+
+```
+
+Out-of-bag error = 17.23%
