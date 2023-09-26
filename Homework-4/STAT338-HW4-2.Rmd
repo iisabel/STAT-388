@@ -1,0 +1,119 @@
+---
+title: "STAT 338 Homework 4"
+author: "Isabel Heard"
+date: "10/29/2021"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## 1 - Download Data Set
+```{r}
+#read.csv("/Users/isabelheard/Downloads/STAT 338/HW 4/PredictiveHW4Dataset_2021.csv")
+getwd()
+setwd("/Users/isabelheard/Downloads/STAT 338/HW 4")
+d <- read.csv("PredictiveHW4Dataset_2021.csv", TRUE, ",")
+class(d)
+head(d)
+
+#d<-read.csv(file.choose())
+
+train <- d[1:900,]
+train2 <- subset(train, select=-c(id))
+test <- d[901:1000,]
+test2 <- subset(test, select=-c(id))
+```
+
+
+
+
+I first downloaded the data set and split it up by training and test data sets.
+
+
+
+
+
+## 2 - Buding GAM
+```{r error=TRUE}
+library(gam)
+#cross validation
+a <- gam(y ~ ., data=train2)
+summary(a)
+
+set.seed(1234)
+fold <- sample(rep(1:10, each = 90), replace = FALSE)
+yhat <- rep(NA, 900)
+for (i in 1:10){
+a <- gam(y ~ ., train2[fold != i,], family = gaussian)
+yhat[fold == i] <- predict(a, train2[fold == i,])
+  }
+mse <- sum((yhat - train2$y)^2)
+mse
+
+
+
+a <- gam(y ~ poly(x3, degree = 2), data = train2)
+plot(a)
+
+a <- gam(y ~ lo(x8, s=3), data = train2)
+plot(a)
+
+a <- gam(y ~ x10, data = train2)
+plot(a)
+```
+
+
+
+
+I did a summary of the data to see which variables were the most significant.
+x3, x8, and x10 all seemed to be fairly significant so I decided to include them in my model.
+I then ran a test on these three to see which model would best fit each variable.
+x3 fit a polynomial model, x8 fitted the lo model best, and x10 fit the linear model best.
+The mse is quite high, but it was the lowest value that I calculated given all the different options I tried.
+
+
+
+
+```{r error=TRUE}
+library(gam)
+gam2 <- gam(y ~ x3 + x8 + x10, data = train2)
+step.Gam(gam2, scope = list(~1 + poly(train2$x3, degree = 2), ~1 + lo(train2$x8, span = s[3]), ~1 + train2$x10), direction = "both")
+
+model4 <- gam(y ~ poly(x3, degree = 2) + lo(x8, span = s[3]) + x10, data = train2[1:900,], family = gaussian)
+model4
+
+predict(model4, newdata=train2[1:900,], terms = "response")
+pred <- predict(model4, newdata=d[900:1000,], terms = "response")
+pred
+#write.csv(pred,"/Users/isabelheard/Downloads/STAT 338/HW 4\\predictions.csv")
+
+
+#simplest model
+#model <- gam(y ~ s(x3) +  s(x8) + s(x10) , data = train2[1:900,], family = gaussian)
+#model
+#predict(model, newdata=train2[1:900,], terms = "response")
+#pred <- predict(model, newdata=d[900:1000,], terms = "response")
+#pred
+```
+
+
+
+
+Then I used this model to use on the training data set and look at its outputs.
+I felt the step function would be beneficial to help find the best model that I could.
+I felt that with the mse outputs I obtained and the outputs from the model being used on the training data set, I was able to use my model on the last 100 observations.
+
+
