@@ -1,0 +1,379 @@
+---
+title: "STAT 338 Homework 3"
+author: "Isabel Heard"
+date: "10/13/2021"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 1 - Chapter 6 Question 4
+Suppose we estimate the regression coefficients in a linear regression model by minimizing EQUATION... for a particular value of λ. For parts (a) through (e), indicate which of i. through v. is correct. Justify your answer.
+
+## a
+iii. The training RSS will steadily increase because the least squares estimate will decreases, and when the LSE decreases, the training RSS increases.
+
+## b
+ii. When increasing λ from 0 for the test RSS it will initially decrease, and then eventually start increasing in a U shape. This is because the training data set is trying to find a place between under fitting and over fitting the data which creates the U shape.
+
+## c
+iv. When increasing λ from 0 we will see a steady decrease in the variance because the penalty term will be increasing, also we are getting closer to 0, so the variance decreases.
+
+## d
+iii. When increasing λ from 0, for squared bias because the model is becoming less flexible as λ increases.
+
+## e
+v. When increasing λ from 0 irreducible error will remain constant because it is independent of the model, so it will remain constant. 
+
+
+
+# 2 - Chapter 6 Question 8 (Skip Part D)
+In this exercise, we will generate simulated data, and will then use this data to perform best subset selection.
+
+## a
+Use the rnorm() function to generate a predictor X of length n = 100, as well as a noise vector ε of length n = 100.
+
+```{r} 
+set.seed(1)
+X <- rnorm(100)
+noise <- rnorm(100)
+```
+
+
+## b
+Generate a response vector Y of length n = 100 according to the model
+Y = β0 +β1X +β2X2 +β3X3 +ε, where β0, β1, β2, and β3 are constants of your choice.
+
+```{r} 
+Y = 5 + 2*X + 4*X^2 - 2*X^3 + noise
+```
+
+
+## c
+Use the regsubsets() function to perform best subset selection in order to choose the best model containing the predictors X, X2, . . . , X10. What is the best model obtained according to Cp, BIC, and adjusted R2? Show some plots to provide evidence for your answer, and report the coefficients of the best model obtained. Note you will need to use the data.frame() function to create a single data set containing both X and Y.
+
+```{r error=TRUE}
+library(leaps)
+data.full <-  data.frame("y" = Y, "x" = X)
+modified.full <-  regsubsets(y ~ poly(x, 10, raw=TRUE), data = data.full, nvmax = 10)
+modified.summary <-  summary(modified.full)
+
+# Find the model size for best Cp, BIC and adjR2
+which.min(modified.summary$cp)
+which.min(modified.summary$bic)
+which.max(modified.summary$adjr2)
+
+
+# Plots
+plot(modified.summary$cp, xlab="Subset Size", ylab="Cp", pch=20, type="l")
+points(3, modified.summary$cp[3], pch=4, col="green", lwd=7)
+
+plot(modified.summary$bic, xlab="Subset Size", ylab="BIC", pch=20, type="l")
+points(3, modified.summary$bic[3], pch=4, col="green", lwd=7)
+
+plot(modified.summary$adjr2, xlab="Subset Size", ylab="AdjrR2", pch=20, type="l")
+points(3, modified.summary$adjr2[3], pch=4, col="green", lwd=7)
+
+
+coefficients(modified.full, id=3)
+coefficients(modified.full, id = 7)
+```
+
+Based on these graphs it looks like 3 variables provide the best fit.
+
+## e
+Now fit a lasso model to the simulated data, again using X,X2, . . . , X 10 as predictors. Use cross-validation to select the optimal value of λ. Create plots of the cross-validation error as a function of λ. Report the resulting coefficient estimates, and discuss the results obtained.
+
+```{r error=TRUE}
+library(glmnet)
+data.full <- data.frame("y" = Y, "x" = X)
+xmat <- model.matrix(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + I(x^6) + I(x^7) + I(x^8) + I(x^9) + I(x^10), data = data.full)[, -1]
+
+cv.lasso <- cv.glmnet(xmat, y, alpha = 1)
+plot(cv.lasso)
+
+bestlam <- cv.lasso$lambda.min
+bestlam
+
+se <- cv.lasso$lambda.1se
+se
+
+fit.lasso <- glmnet(xmat, y, alpha = 1)
+predict(fit.lasso, s = bestlam, type = "coefficients")[1:11, ]
+```
+
+
+
+RStudio did not like this code when I used the Knit function, but it ran fine in the terminal. 
+Answer: Optimal value of λ is 0.00971844. Based on the coefficients estimates, it looks like X, X^2, X^3, X^5, X^7, X^8, X^9, and X^10.
+
+## f
+Now generate a response vector Y according to the model Y = β0 + β7X^7 + ε, and perform best subset selection and the lasso. Discuss the results obtained.
+
+```{r error=TRUE}
+library(leaps)
+b7 = 7
+b0 = 5
+Y = b0 + b7*X^7 + noise
+
+df = data.frame(Y = Y, X = X)
+fit = regsubsets(Y~poly(X, 10, raw = T), data = df, nvmax = 10)
+fit_sum = summary(fit)
+
+par(mfrow = c(2, 2))
+plot(fit_sum$rss,   xlab = 'Number of Variables', ylab = 'RSS',type = 'l')
+
+plot(fit_sum$cp,    xlab = 'Number of Variables', ylab = 'Cp', type = 'l')
+points(which.min(fit_sum$cp), fit_sum$cp[which.min(fit_sum$cp)], col = 'green', pch = 15, cex = 2)
+
+plot(fit_sum$bic,   xlab = 'Number of Variables', ylab = 'BIC', type = 'l')
+points(which.min(fit_sum$bic), fit_sum$bic[which.min(fit_sum$bic)], col = 'green', pch = 15, cex = 2)
+
+plot(fit_sum$adjr2, xlab = 'Number of Variables', ylab = 'Adjusted R2', type = 'l')
+points(which.max(fit_sum$adjr2), fit_sum$adjr2[which.max(fit_sum$adjr2)], col = 'green', pch = 15, cex = 2)
+
+#Lasso
+model = model.matrix(Y ~ poly(X, 10, raw = T), data = df)[, -1]
+model.lasso = cv.glmnet(model, Y, alpha = 1)
+lambda.lasso = model.lasso$lambda.min
+lambda.lasso
+best.model = glmnet(model, Y, alpha = 1)
+predict(best.model, s = lambda.lasso, type = "coefficients")
+```
+
+
+Answer: Overall, Lasso has produced the better model, with picking only 1 variable.
+
+
+
+# 3 - Chapter 6 Question 9
+In this exercise, we will predict the number of applications received using the other variables in the College data set.
+
+## a
+Split the data set into a training set and a test set.
+
+```{r error=TRUE}
+library(ISLR)
+data("College")
+
+set.seed(1)
+
+index <- sample(x = nrow(College), size = .70*nrow(College))
+train <- College[index,]
+nrow(train) / nrow(College)
+test <- College[-index,]
+nrow(test) / nrow(College)
+```
+
+## b
+Fit a linear model using least squares on the training set, and report the test error obtained.
+
+```{r error=TRUE}
+lm.fit <- lm(Apps ~., data = train)
+lm.pred <- predict(lm.fit, test)
+mean((test[, "Apps"] - lm.pred)^2)
+```
+
+The MSE is 1261630.
+
+## c
+Fit a ridge regression model on the training set, with λ chosen by cross-validation. Report the test error obtained.
+
+```{r error=TRUE}
+train.matrix <- model.matrix(Apps ~ ., data=train)
+test.matrix <- model.matrix(Apps ~., data=test)
+lambda2 <- 10^seq(4,-2,length=100)
+
+cv.ridge <- cv.glmnet(train.matrix, train$Apps, alpha=0, lambda=lambda2)
+plot(cv.ridge)
+bestlam.ridge <- cv.ridge$lambda.min
+bestlam.ridge
+
+pred.ridge <- predict(ridge, s = bestlam.ridge, newx = test.mat)
+mean((pred.ridge - College.test$Apps)^2)
+```
+
+The MSE is higher for ridge regression than for least squares, 920371.9
+
+
+## d
+Fit a lasso model on the training set, with λ chosen by cross- validation. Report the test error obtained, along with the number of non-zero coefficient estimates.
+
+```{r error=TRUE}
+train.matrix <- model.matrix(Apps ~ ., data=train)
+test.matrix <- model.matrix(Apps ~., data=test)
+
+lasso <- glmnet(train.matrix, train$Apps, alpha = 1, lambda = lambda2)
+cv.lasso <- cv.glmnet(train.matrix, train$Apps, alpha = 1, lambda = lambda2)
+plot(cv.lasso)
+bestlam.lasso <- cv.lasso$lambda.min
+bestlam.lasso
+
+pred.lasso <- predict(lasso, s = bestlam.lasso, newx = test.mat)
+mean((pred.lasso - College.test$Apps)^2)
+
+coef(cv.lasso, 3)
+```
+
+Test Error is 920058.4. There are 18 non-zero coefficient estimates.
+
+## e
+Fit a PCR model on the training set, with M chosen by cross-validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r error=TRUE}
+library(pls)
+a <- pcr(Apps~., data = train, validation = "CV")
+validationplot(a)
+coef(a)
+
+pcr_pred <- predict(a, test, ncomp = 17)
+(pcr_mse <- mean((pcr_pred - test$Apps)^2))
+```
+
+Test error is 1261630. Value of M is 17.
+
+
+## f
+Fit a PLS model on the training set, with M chosen by cross-validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r error=TRUE}
+b <- plsr(Apps~., data = train, validation = "CV")
+validationplot(b)
+coef(b)
+
+pls_pred <- predict(b, test, ncomp = 12)
+(pls_mse <- mean((pls_pred - test$Apps)^2))
+```
+Test error is 1270669. M is 12.
+
+## g
+Comment on the results obtained. How accurately can we predict the number of college applications received? Is there much difference among the test errors resulting from these five approaches?
+
+All models were fairly similar in the results obtained. We can predict the number of applications with high accuracy with all five approaches.
+
+
+
+# 5 - Chapter 6 Question 11
+We will now try to predict per capita crime rate in the Boston data set.
+
+## a
+Try out some of the regression methods explored in this chapter, such as best subset selection, the lasso, ridge regression, and PCR. Present and discuss results for the approaches that you consider.
+
+
+```{r error=TRUE}
+library(MASS)
+data("Boston")
+
+set.seed(10)
+train <- sample(1:nrow(Boston), nrow(Boston)*0.70)
+test <- -train
+```
+
+```{r error=TRUE}
+# BSS
+library(leaps)
+
+best_subset <- regsubsets(crim ~ ., data=Boston, subset=train, nvmax=13)
+reg.summary <- summary(best_subset)
+reg.summary
+
+which.min(reg.summary$cp)
+which.min(reg.summary$bic)
+which.max(reg.summary$adjr2)
+
+par(mfrow=c(2,2))
+plot(reg.summary$rss,xlab="Number of Variables",ylab="RSS",type="l")
+
+plot(reg.summary$adjr2,xlab="Number of Variables",ylab="Adjusted RSq",type="l")
+p = which.max(reg.summary$adjr2)
+points(p,reg.summary$adjr2[p], col="red",cex=2,pch=20)
+
+plot(reg.summary$cp,xlab="Number of Variables",ylab="Cp",type='l')
+p = which.min(reg.summary$cp)
+points(p,reg.summary$cp[p],col="red",cex=2,pch=20)
+
+plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC",type='l')
+p = which.min(reg.summary$bic)
+points(p,reg.summary$bic[p],col="red",cex=2,pch=20)
+
+
+```
+
+```{r error=TRUE}
+#lasso
+x = model.matrix(crim ~ . - 1, data = Boston)
+y = Boston$crim
+permanent <- cv.glmnet(x,y, alpha = 1)
+plot(permanent)
+permanent$lambda.min
+permanent$lambda.1se
+permanent
+final <- glmnet(x,y, alpha = 1, lambda = permanent$lambda.min)
+coef(final)
+```
+
+```{r error=TRUE}
+# ridge
+x = model.matrix(crim ~ . - 1, data = Boston)
+y = Boston$crim
+ridge.model = cv.glmnet(x, y, type.measure = "mse", alpha = 0)
+plot(ridge.model)
+sqrt(ridge.model$cvm[ridge.model$lambda == ridge.model$lambda.1se])
+
+bestlam <- ridge.model$lambda.1se
+bestlam
+ridge.model <- glmnet(x, y, alpha = 0)
+```
+
+```{r error=TRUE}
+# PCR
+pcr.fit = pcr(crim ~ ., data = Boston, validation = "CV")
+summary(pcr.fit)
+validationplot(pcr.fit, val.type = "MSEP")
+```
+
+
+For best subset selection it looks like 3 or 7 could be good options for a model. But going with 3 may be better, so it is a simpler model.
+
+
+## b
+Propose a model (or set of models) that seem to perform well on this data set, and justify your answer. Make sure that you are evaluating model performance using validation set error, cross-validation, or some other reasonable alternative, as opposed to using training error.
+
+It looks like the best model to go by is best subset selection.
+
+```{r error=TRUE}
+coef(best_subset, id = 7)
+```
+
+## c
+Does your chosen model involve all of the features in the data set? Why or why not?
+
+
+No, it only includes 7 predictors from the best subset selection approach. This produces the least amount of error with the simplest model. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
