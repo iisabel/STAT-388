@@ -1,0 +1,333 @@
+---
+title: "STAT 338 Homework 1"
+author: "Isabel Heard"
+date: "9/10/2021"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem 1
+Explain whether each scenario is a classification or regression problem, and indicate whether we are most interested in inference or prediction. Finally, provide n and p.
+
+
+## a
+We collect a set of data on the top 500 firms in the US. For each firm we record profit, number of employees, industry and the CEO salary. We are interested in understanding which factors affect CEO salary.
+
+regression,
+inference,
+n = 500,
+p = 3
+
+
+## b
+We are considering launching a new product and wish to know whether it will be a success or a failure. We collect data on 20 similar products that were previously launched. For each product we have recorded whether it was a success or failure, price charged for the product, marketing budget, competition price, and ten other variables.
+
+classification,
+prediction,
+n = 20,
+p = 13
+
+
+## c
+We are interested in predicting the % change in the USD/Euro exchange rate in relation to the weekly changes in the world stock markets. Hence we collect weekly data for all of 2012. For each week we record the % change in the USD/Euro, the % change in the US market, the % change in the British market, and the % change in the German market.
+
+regression,
+predicting,
+n = 52,
+p = 3
+
+
+
+
+
+
+# Problem 2
+You will now think of some real-life applications for statistical learning.
+
+
+## a
+Describe three real-life applications in which classification might be useful. Describe the response, as well as the predictors. Is the goal of each application inference or prediction? Explain your answer.
+
+1. A real life classification problem could be looking at which emails can be classified as spam. The goal would be to use the different predictors to understand what the main components of a spam email are and how to use those to detect is an email is spam or not. Some predictors could be having a lot of capital letters, many special characters, a lot of numbers, or misspelled words. The goal of this problem is inference, because you are trying to come to a conclusion on whether or not a given email is spam.
+
+2. Another real life classification problem would be looking at hand written images of single digits and trying to figure out what number it is. A predictor would be looking at the pixels to see the intensity of the color in a given area. The goal of this application is inference, we are pulling data and evidence to determine the hand written number. 
+
+3. The last real life classification problem is facial recognition. Predictors could be different features of the face. This is inference because you are using the data collected to try and come to a conclusion about whose face is being recognized.
+
+
+## b
+Describe three real-life applications in which regression might be useful. Describe the response, as well as the predictors. Is the goal of each application inference or prediction? Explain your answer.
+
+1. A real life application in which regression is useful would be predicting the cost of houses. Predictors could be things such as the size of house, neighborhood its located in, number of bathrooms. The goal of this application is prediction. 
+
+2. Predicting if someone may have a heart attack in their lifetime. Predictors could be things such as weight, diet, exercise, family history, bmi. The goal of this application is to predict, There is no way to tell for sure if someone is going to have a heart attack in their lifetime, but we can predict that it may or may not happen. 
+
+3. Predicting a cars value. Predictors could be the make and model, miles, interior style, size, brand. This is a inference problem because you are using data to speculate how much a car is worth.  
+
+
+
+
+
+# Problem 3
+What are the advantages and disadvantages of a very flexible (versus a less flexible) approach for regression or classification? Under what circumstances might a more flexible approach be preferred to a less flexible approach? When might a less flexible approach be preferred?
+
+The advantages of a very flexible approach for regression or classification is that it will be able to represent more complex problems and yield less bias. Some disadvantages could be overfitting the data making it harder to interpret.  A more flexible approach is preferred when a problem is underfitted. A less flexible approach is preferred when a data is more linear, or when the data set has fewer observations.
+
+
+
+
+# Problem 4
+This exercise relates to the College data set, which can be found in the file College.csv on the book website. It contains a number of variables for 777 different universities and colleges in the US. The variables are
+
+• Private : Public/private indicator
+• Apps : Number of applications received
+• Accept : Number of applicants accepted
+• Enroll : Number of new students enrolled
+• Top10perc : New students from top 10 % of high school class 
+• Top25perc : New students from top 25 % of high school class 
+• F.Undergrad : Number of full-time undergraduates
+• P.Undergrad : Number of part-time undergraduates
+• Outstate : Out-of-state tuition
+• Room.Board : Room and board costs
+• Books : Estimated book costs
+• Personal : Estimated personal spending
+• PhD : Percent of faculty with Ph.D.’s
+• Terminal : Percent of faculty with terminal degree 
+• S.F.Ratio : Student/faculty ratio
+• perc.alumni : Percent of alumni who donate
+• Expend : Instructional expenditure per student
+• Grad.Rate : Graduation rate
+Before reading the data into R, it can be viewed in Excel or a text editor.
+
+
+
+## a
+Use the read.csv() function to read the data into R. Call the loaded data college. Make sure that you have the directory set to the correct location for the data.
+
+```{r} 
+library(ISLR)
+college <- read.csv("College3.csv")
+```
+
+
+
+## b
+Look at the data using the View() function. You should notice that the first column is just the name of each university. We don’t really want R to treat this as data. However, it may be handy to have these names for later. Try the following commands:
+
+```{r} 
+rownames(college) <- college[,1]
+#fix(college)
+View(college)
+```
+
+You should see that there is now a row.names column with the name of each university recorded. This means that R has given each row a name corresponding to the appropriate university. R will not try to perform calculations on the row names. However, we still need to eliminate the first column in the data where the names are stored. Try
+
+```{r} 
+college <- college [,-1]
+#View(college)
+```
+
+
+
+## c
+i. Use the summary() function to produce a numerical summary of the variables in the data set.
+
+```{r} 
+summary(college)
+```
+
+
+
+ii.Use the pairs() function to produce a scatterplot matrix of the first ten columns or variables of the data. Recall that you can reference the first ten columns of a matrix A using A[,1:10].
+
+```{r} 
+college$private <- as.factor(college$Private)
+#pairs(college[,1:10])  it didn't like this line of code?
+```
+
+
+
+
+iii. Use the plot() function to produce side-by-side boxplots of Outstate versus Private.
+
+```{r} 
+boxplot(college$Outstate ~ college$Private, col = c("red", "blue"), main = "Outstate versus Private", xlab = "Private", ylab = "Outstate")
+```
+
+
+
+
+iv. Create a new qualitative variable, called Elite, by binning the Top10perc variable. We are going to divide universities into two groups based on whether or not the proportion of students coming from the top 10% of their high school classes exceeds 50 %.
+Use the summary() function to see how many elite universities there are. Now use the plot() function to produce side-by-side boxplots of Outstate versus Elite.
+
+```{r} 
+Elite=rep("No",nrow(college))
+Elite[college$Top10perc >50]=" Yes"
+Elite=as.factor(Elite)
+college=data.frame(college ,Elite)
+summary(college$Elite)
+boxplot(college$Outstate ~ college$Elite, col = c("red", "blue"), main = "Outstate versus Elite", xlab = "Elite", ylab = "Outstate")
+```
+
+
+
+
+
+v. Use the hist() function to produce some histograms with differing numbers of bins for a few of the quantitative variables. You may find the command par(mfrow = c(2, 2)) useful: it will divide the print window into four regions so that four plots can be made simultaneously. Modifying the arguments to this function will divide the screen in other ways.
+
+```{r} 
+par(mfrow = c(2, 2))
+hist(college$Accept, breaks = 12, freq = TRUE, col = "blue", main = "", xlab = "Number of Applicants Accepted", ylab = "Frequency")
+
+hist(college$Apps, breaks = 12, freq = TRUE, col = "green", main = "", xlab = "Applications Received", ylab = "Frequency")
+
+hist(college$Grad.Rate, breaks = 8, freq = TRUE, col = "red", main = "", xlab = " Graduation Rate", ylab = "Frequency")
+
+hist(college$Outstate, breaks = 8, freq = TRUE, col = "pink", main = "", xlab = " Out of State Tuition", ylab = "Money")
+```
+
+
+
+vi. Continue exploring the data, and provide a brief summary of what you discover.
+
+```{r} 
+plot(college$Outstate, college$Grad.Rate) 
+
+
+plot(college$Accept / college$Apps, college$S.F.Ratio) 
+
+
+plot(college$PhD, college$Grad.Rate) 
+
+```
+
+
+After continuing to expore the data, I have found that high tuition rate correlates to a high graduation rate. 
+Also, colleges with a low acceptance rate send to also have a low student to faculty ratio. 
+Colleges with more of the faculty having a PhD does lead to higher graduation rates.
+
+
+
+
+
+
+# Problem 5
+The training data (http://bit.ly/340jDyc) set contains 175 observations classified as red or green. The test data set (http://bit.ly/2L7uhdO) contains 1750 observations classified as either red or green.
+
+
+
+## a
+Perform k-nearest neighbor classification using the training data with k = 1. Use this model to predict the class of each observation in the training data set. How many observations were incorrectly classified? Is this good?
+
+```{r} 
+# letters are predictive classes, numbers are probabilities
+# overfit?
+
+library(class)
+train <- read.csv("PA_HW1_train.csv")
+
+
+x1 <- runif(175,-10,10)
+x2 <- runif(175,-10,10)
+y <- rep("red",175)
+y[(x1 > 0 & x2 < 0) | (x1 > 5) | (x1^2 + x2^2 < 20)] <- "green"
+plot(x1, x2, col = y, pch = 16, cex = 0.5)
+
+
+#knn trains the data using the first 900 rows and then predicts the class of the test data set.
+x <- data.frame(x1, x2)
+a <- knn(x[1:100,], x[101:175,], y[1:100], k = 1, prob = TRUE)
+table(a, y[101:175])
+#So accuracy here with knn is (37+29) / 100
+
+
+#Predicting over a grid: 
+grid_x1 <- seq(-10,10,0.5)
+grid_x2 <- seq(-10,10,0.5)   #change to 0.1 to make smaller
+grid <- expand.grid(grid_x1,grid_x2)
+a <- knn(x, grid, y, k = 1, prob = TRUE)
+
+#Plot the boundaries over a grid
+plot(grid[,1],grid[,2],col = as.character(a))
+```
+
+
+Incorrectly classified: 9, could be better.
+
+
+
+
+
+## b
+Again using k = 1, build a classification model with the training data set and use it to classify the observations in the test data set. How many observations were incorrectly classified? Is this good?
+
+```{r} 
+library(class)
+test <- read.csv("PA_HW1_test.csv")
+
+x1 <- runif(1750,-10,10)
+x2 <- runif(1750,-10,10)
+y <- rep("red",1750)
+y[(x1 > 0 & x2 < 0) | (x1 > 5) | (x1^2 + x2^2 < 20)] <- "green"
+plot(x1, x2, col = y, pch = 16, cex = 0.5)
+
+#knn trains the data using the first 900 rows and then predicts the class of the test data set. 
+x <- data.frame(x1, x2)
+a <- knn(x[1:1200,], x[1201:1750,], y[1:1200], k = 1, prob = TRUE)
+table(a, y[1201:1750])
+
+#Predicting over a grid: 
+grid_x1 <- seq(-10,10,0.5)
+grid_x2 <- seq(-10,10,0.5)   #change to 0.1 to make smaller
+grid <- expand.grid(grid_x1,grid_x2)
+a <- knn(x, grid, y, k = 1, prob = TRUE)
+
+#Plot the boundaries over a grid
+plot(grid[,1],grid[,2],col = as.character(a))
+
+```
+
+
+Incorrectly classified: 11, good.
+
+
+
+
+
+# Problem 6
+Plot all irises based on their Sepal.Length and Sepal. Width values using different colors for each species.
+
+```{r} 
+plot(iris$Petal.Length, iris$Petal.Width, col = c("red", "blue"), main="")
+```
+
+
+
+
+# Problem 7
+Perform linear discriminant analysis using their iris data with only Sepal.Length and Sepal.Width as predictors. Make predictions about the species of each iris and create a confusion matrix for this predictions.
+
+```{r} 
+#LDA
+library(MASS) #Load package 'MASS' to perform LDA
+fit.LDA = lda( Species ~ Sepal.Length + Sepal.Width, iris)
+fit.LDA
+
+
+#Predictions
+library(MASS)
+iris.lda <- lda(Species ~ . , data = iris)
+table(predict(iris.lda, type="class")$class, iris$Species)
+
+```
+
